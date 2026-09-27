@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Registro de dosis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F1F7F5;
+    --surface: #FFFFFF;
+    --surface-2: #E4EFEC;
+    --text: #12262A;
+    --muted: #5B7A76;
+    --border: #D6E4E0;
+    --amber: #C97C1F;
+    --amber-soft: #F3DFC0;
+    --teal: #1F8F79;
+    --teal-soft: #CDEEE4;
+    --blue: #4A63B8;
+    --blue-soft: #DBE2F7;
+    --danger: #B5482A;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1B1E;
+      --surface: #16262A;
+      --surface-2: #1E3236;
+      --text: #EAF3F0;
+      --muted: #8FB0AB;
+      --border: #2A3F42;
+      --amber: #E8A33D;
+      --amber-soft: #3A2E1A;
+      --teal: #3FD1B0;
+      --teal-soft: #163A32;
+      --blue: #8CA6EE;
+      --blue-soft: #202B45;
+      --danger: #E07156;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1B1E;
+    --surface: #16262A;
+    --surface-2: #1E3236;
+    --text: #EAF3F0;
+    --muted: #8FB0AB;
+    --border: #2A3F42;
+    --amber: #E8A33D;
+    --amber-soft: #3A2E1A;
+    --teal: #3FD1B0;
+    --teal-soft: #163A32;
+    --blue: #8CA6EE;
+    --blue-soft: #202B45;
+    --danger: #E07156;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  * { box-sizing: border-box; }
+  body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 18px 18px calc(24px + env(safe-area-inset-bottom, 0px)); }
+
+  header { padding: 6px 2px 14px; }
+  .day-label { font-size: 14px; color: var(--muted); font-weight: 700; text-transform: capitalize; }
+  .day-total { font-size: 34px; font-weight: 800; letter-spacing: -0.01em; margin-top: 2px; }
+  .day-total span { font-size: 16px; font-weight: 700; color: var(--muted); }
+
+  .card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    border: none;
+    border-radius: 20px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+    transition: transform .08s ease;
+  }
+  .card:active { transform: scale(0.97); }
+  .icon {
+    width: 50px; height: 50px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+  }
+  .card-body { flex: 1; min-width: 0; }
+  .card-name { font-size: 16px; font-weight: 700; }
+  .card-sub { font-size: 13px; color: var(--muted); margin-top: 1px; }
+  .count {
+    font-size: 30px; font-weight: 800; min-width: 36px; text-align: right;
+    cursor: pointer; border-bottom: 1.5px dashed currentColor; line-height: 1.3;
+  }
+
+  .pastilla { background: var(--amber-soft); }
+  .pastilla .icon { background: var(--amber); color: #fff; }
+  .pastilla .count { color: var(--amber); }
+
+  .inhalador { background: var(--teal-soft); }
+  .inhalador .icon { background: var(--teal); color: #fff; }
+  .inhalador .count { color: var(--teal); }
+
+  .gotas { background: var(--blue-soft); }
+  .gotas .icon { background: var(--blue); color: #fff; }
+  .gotas .count { color: var(--blue); }
+
+  .date-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 10px 12px; margin-bottom: 14px;
+  }
+  .date-row label { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .date-row input[type="date"] {
+    flex: 1; border: none; background: none; color: var(--text);
+    font-family: inherit; font-size: 14px; font-weight: 700;
+  }
+  .date-row input[type="date"]::-webkit-calendar-picker-indicator { filter: var(--picker-filter, none); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .date-row input[type="date"] { color-scheme: dark; }
+  }
+  .today-jump {
+    border: none; background: var(--surface-2); color: var(--text);
+    font-family: inherit; font-size: 12px; font-weight: 700;
+    padding: 7px 10px; border-radius: 10px; cursor: pointer; flex-shrink: 0;
+  }
+  .past-badge {
+    display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 700;
+    color: var(--danger);
+  }
+
+  .undo-row { display: flex; justify-content: center; margin: 6px 0 22px; }
+  .undo-btn {
+    background: none; border: none; color: var(--muted);
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    padding: 8px 10px; cursor: pointer; opacity: 0.9;
+  }
+  .undo-btn:disabled { opacity: 0.35; }
+
+  .tabs { display: flex; gap: 6px; background: var(--surface-2); border-radius: 14px; padding: 4px; margin-bottom: 14px; }
+  .tab {
+    flex: 1; text-align: center; padding: 9px 4px; border-radius: 10px;
+    font-family: inherit; font-size: 13px; font-weight: 700; color: var(--muted);
+    background: none; border: none; cursor: pointer;
+  }
+  .tab.active { background: var(--surface); color: var(--text); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .summary-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
+  }
+  .summary-title { font-size: 13px; color: var(--muted); font-weight: 700; margin-bottom: 10px; }
+  .summary-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot.p { background: var(--amber); }
+  .dot.i { background: var(--teal); }
+  .dot.g { background: var(--blue); }
+  .summary-label { flex: 1; font-size: 14px; }
+  .summary-value { font-size: 15px; font-weight: 800; }
+  .summary-total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 9px; font-weight: 800; }
+
+  .day-list { max-height: 340px; overflow-y: auto; }
+  .day-list::-webkit-scrollbar { display: none; }
+  .day-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .day-item:last-child { border-bottom: none; }
+  .day-item .date-part { flex: 1; }
+  .day-item .date-part b { display: block; font-size: 13px; }
+  .day-item .date-part small { color: var(--muted); font-size: 12px; }
+
+  .empty { text-align: center; color: var(--muted); font-size: 13px; padding: 26px 0; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(10, 20, 22, 0.5);
+    align-items: flex-end; justify-content: center; z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--surface); width: 100%; max-width: 480px;
+    border-radius: 20px 20px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    max-height: 70vh; overflow-y: auto;
+  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .modal-title { font-size: 16px; font-weight: 800; }
+  .modal-close {
+    border: none; background: var(--surface-2); color: var(--text);
+    width: 30px; height: 30px; border-radius: 50%; font-size: 14px; cursor: pointer;
+  }
+  .edit-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .edit-row input[type="time"] {
+    flex: 1; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    font-family: inherit; font-size: 14px; font-weight: 700; border-radius: 10px; padding: 7px 9px;
+  }
+  .del-btn {
+    border: none; background: none; color: var(--danger);
+    font-size: 15px; cursor: pointer; padding: 6px 8px;
+  }
+  .add-manual {
+    width: 100%; margin-top: 12px; border: 1px dashed var(--border); background: none;
+    color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 700;
+    padding: 10px; border-radius: 12px; cursor: pointer;
+  }
+
+  .pdf-row { display: flex; gap: 8px; margin: 6px 0 22px; }
+  .year-select {
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    border-radius: 10px; padding: 8px 10px;
+  }
+  .pdf-btn {
+    flex: 1; border: none; background: var(--surface-2); color: var(--text);
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    padding: 9px 10px; border-radius: 10px; cursor: pointer;
+  }
+
+  .print-only { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="day-label" id="dayLabel"></div>
+    <div class="day-total" id="dayTotal">0 <span>dosis hoy</span></div>
+    <div class="past-badge" id="pastBadge" style="display:none;">Añadiendo dosis a un día pasado</div>
+  </header>
+
+  <div class="date-row">
+    <label for="targetDate">Día</label>
+    <input type="date" id="targetDate">
+    <button class="today-jump" id="jumpToday">Hoy</button>
+  </div>
+
+  <button class="card pastilla" data-type="p" id="btnP">
+    <div class="icon">💊</div>
+    <div class="card-body">
+      <div class="card-name">Pastilla alergia</div>
+      <div class="card-sub">Toca para registrar una dosis</div>
+    </div>
+    <div class="count" id="countP" data-type="p">0</div>
+  </button>
+
+  <button class="card inhalador" data-type="i" id="btnI">
+    <div class="icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.5 3c-0.7 3.5-0.9 6.5-0.2 9 0.6 2.1 2.5 3.3 4.5 4.1 1.1 0.4 1.1 1.2 0.4 1.7-1 0.7-2.6 0.4-3.6-0.6"/>
+        <ellipse cx="13.1" cy="16.7" rx="1.15" ry="0.6" transform="rotate(18 13.1 16.7)" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Inhalador nasal</div>
+      <div class="card-sub">Toca para registrar una dosis</div>
+    </div>
+    <div class="count" id="countI" data-type="i">0</div>
+  </button>
+
+  <button class="card gotas" data-type="g" id="btnG">
+    <div class="icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 15.5c2.6-4 6.2-6 10-6s7.4 2 10 6c-2.6 4-6.2 6-10 6s-7.4-2-10-6z"/>
+        <circle cx="12" cy="15.5" r="2.4"/>
+        <path d="M12.3 2.2c0 2-1.9 4.2-1.9 6.2a2 2 0 1 0 4 0c0-2-2.1-4.2-2.1-6.2z" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Gotas de ojos</div>
+      <div class="card-sub">Toca para registrar una dosis</div>
+    </div>
+    <div class="count" id="countG" data-type="g">0</div>
+  </button>
+
+  <div class="undo-row">
+    <button class="undo-btn" id="undoBtn" disabled>↺ Deshacer último registro</button>
+  </div>
+
+  <div class="undo-row">
+    <button class="undo-btn" id="exportBtn">⬇ Exportar todos los datos (CSV)</button>
+  </div>
+
+  <div class="pdf-row">
+    <select class="year-select" id="pdfYearSelect"></select>
+    <button class="pdf-btn" id="pdfBtn">🖨 Generar PDF del año</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="hoy">Hoy</button>
+    <button class="tab" data-panel="mes">Mes</button>
+    <button class="tab" data-panel="anio">Año</button>
+  </div>
+
+  <div class="panel active" id="panel-hoy">
+    <div class="summary-card">
+      <div class="summary-title">Detalle de hoy</div>
+      <div class="day-list" id="todayList"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-mes">
+    <div class="summary-card" id="monthSummary"></div>
+  </div>
+
+  <div class="panel" id="panel-anio">
+    <div class="summary-card" id="yearSummary"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="editTitle"></div>
+      <button class="modal-close" id="editClose">✕</button>
+    </div>
+    <div id="editList"></div>
+    <button class="add-manual" id="addManual">+ Añadir hora manual</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.3/jspdf.umd.min.js"></script>
+<script>
+const TYPES = {
+  p: { label: 'Pastilla alergia', dot: 'p' },
+  i: { label: 'Inhalador nasal', dot: 'i' },
+  g: { label: 'Gotas de ojos', dot: 'g' }
+};
+const STORE_KEY = 'dosis_entries_v1';
+
+function loadEntries() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
+}
+function saveEntries(entries) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(entries)); }
+  catch (e) { console.error('No se pudo guardar', e); }
+}
+let entries = loadEntries();
+
+function todayKey(d = new Date()) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function monthKey(d = new Date()) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function yearKey(d = new Date()) {
+  return String(d.getFullYear());
+}
+
+// Día que se está consultando/editando (por defecto, hoy)
+let selectedDate = new Date();
+const dateInput = document.getElementById('targetDate');
+dateInput.max = todayKey();
+dateInput.value = todayKey();
+
+function isSelectedToday() {
+  return todayKey(selectedDate) === todayKey(new Date());
+}
+
+function addDose(type) {
+  // Usa la fecha seleccionada, con la hora actual (o mediodía si es un día pasado)
+  const now = new Date();
+  const ts = isSelectedToday()
+    ? now.getTime()
+    : new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 12, 0, 0).getTime();
+  entries.push({ type, ts });
+  saveEntries(entries);
+  renderAll();
+}
+function undoLast() {
+  if (!entries.length) return;
+  entries.pop();
+  saveEntries(entries);
+  renderAll();
+}
+
+function renderHeader() {
+  const label = selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  document.getElementById('dayLabel').textContent = label;
+  const tk = todayKey(selectedDate);
+  const todays = entries.filter(e => todayKey(new Date(e.ts)) === tk);
+  const suffix = isSelectedToday() ? 'dosis hoy' : 'dosis ese día';
+  document.getElementById('dayTotal').innerHTML = todays.length + ' <span>' + suffix + '</span>';
+  document.getElementById('undoBtn').disabled = entries.length === 0;
+  document.getElementById('pastBadge').style.display = isSelectedToday() ? 'none' : 'block';
+
+  const counts = { p: 0, i: 0, g: 0 };
+  todays.forEach(e => counts[e.type]++);
+  document.getElementById('countP').textContent = counts.p;
+  document.getElementById('countI').textContent = counts.i;
+  document.getElementById('countG').textContent = counts.g;
+}
+
+function renderTodayList() {
+  const tk = todayKey(selectedDate);
+  const todays = entries.filter(e => todayKey(new Date(e.ts)) === tk).sort((a,b) => b.ts - a.ts);
+  const el = document.getElementById('todayList');
+  if (!todays.length) {
+    el.innerHTML = '<div class="empty">Sin registros ese día</div>';
+    return;
+  }
+  el.innerHTML = todays.map(e => {
+    const t = new Date(e.ts);
+    const hora = t.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return `<div class="day-item">
+      <div class="dot ${TYPES[e.type].dot}"></div>
+      <div class="date-part">${TYPES[e.type].label}</div>
+      <small>${hora}</small>
+    </div>`;
+  }).join('');
+}
+
+function summaryBlock(filterFn, title) {
+  const filtered = entries.filter(filterFn);
+  const counts = { p: 0, i: 0, g: 0 };
+  filtered.forEach(e => counts[e.type]++);
+  const total = filtered.length;
+  if (!total) {
+    return `<div class="summary-title">${title}</div><div class="empty">Sin registros todavía</div>`;
+  }
+  let rows = '';
+  Object.keys(TYPES).forEach(k => {
+    rows += `<div class="summary-row">
+      <div class="dot ${TYPES[k].dot}"></div>
+      <div class="summary-label">${TYPES[k].label}</div>
+      <div class="summary-value">${counts[k]}</div>
+    </div>`;
+  });
+  rows += `<div class="summary-row summary-total">
+      <div class="summary-label">Total</div>
+      <div class="summary-value">${total}</div>
+    </div>`;
+  return `<div class="summary-title">${title}</div>${rows}`;
+}
+
+function renderMonth() {
+  const mk = monthKey(selectedDate);
+  const title = selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  document.getElementById('monthSummary').innerHTML =
+    summaryBlock(e => monthKey(new Date(e.ts)) === mk, 'Resumen de ' + title);
+}
+function renderYear() {
+  const yk = yearKey(selectedDate);
+  document.getElementById('yearSummary').innerHTML =
+    summaryBlock(e => yearKey(new Date(e.ts)) === yk, 'Resumen del año ' + yk);
+}
+
+function renderAll() {
+  renderHeader();
+  renderTodayList();
+  renderMonth();
+  renderYear();
+  populateYearSelect();
+}
+
+// --- Edición manual de registros ---
+let editingType = null;
+
+function renderEditList() {
+  const tk = todayKey(selectedDate);
+  const rows = entries
+    .map((e, idx) => ({ e, idx }))
+    .filter(x => x.e.type === editingType && todayKey(new Date(x.e.ts)) === tk)
+    .sort((a, b) => a.e.ts - b.e.ts);
+
+  const el = document.getElementById('editList');
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty">Sin registros ese día</div>';
+    return;
+  }
+  el.innerHTML = rows.map(({ e, idx }) => {
+    const t = new Date(e.ts);
+    const hh = String(t.getHours()).padStart(2, '0');
+    const mm = String(t.getMinutes()).padStart(2, '0');
+    return `<div class="edit-row">
+      <input type="time" value="${hh}:${mm}" data-idx="${idx}">
+      <button class="del-btn" data-idx="${idx}" aria-label="Eliminar">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function openEdit(type) {
+  editingType = type;
+  document.getElementById('editTitle').textContent =
+    TYPES[type].label + ' · ' + selectedDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  renderEditList();
+  document.getElementById('editOverlay').classList.add('active');
+}
+function closeEdit() {
+  document.getElementById('editOverlay').classList.remove('active');
+  editingType = null;
+  renderAll();
+}
+
+document.getElementById('editList').addEventListener('change', e => {
+  if (!e.target.matches('input[type="time"]')) return;
+  const idx = Number(e.target.dataset.idx);
+  const [hh, mm] = e.target.value.split(':').map(Number);
+  const d = selectedDate;
+  entries[idx].ts = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hh, mm, 0).getTime();
+  saveEntries(entries);
+  renderEditList();
+});
+document.getElementById('editList').addEventListener('click', e => {
+  if (!e.target.matches('.del-btn')) return;
+  const idx = Number(e.target.dataset.idx);
+  entries.splice(idx, 1);
+  saveEntries(entries);
+  renderEditList();
+});
+document.getElementById('addManual').addEventListener('click', () => {
+  const now = new Date();
+  const d = selectedDate;
+  const ts = new Date(d.getFullYear(), d.getMonth(), d.getDate(), now.getHours(), now.getMinutes(), 0).getTime();
+  entries.push({ type: editingType, ts });
+  saveEntries(entries);
+  renderEditList();
+});
+document.getElementById('editClose').addEventListener('click', closeEdit);
+document.getElementById('editOverlay').addEventListener('click', e => {
+  if (e.target.id === 'editOverlay') closeEdit();
+});
+document.querySelectorAll('.count').forEach(el => {
+  el.addEventListener('click', e => {
+    e.stopPropagation();
+    openEdit(el.dataset.type);
+  });
+});
+
+// --- Exportar datos ---
+const downloadsApi = null; // en un hosting normal (GitHub Pages) se usa descarga estándar del navegador
+
+function downloadCsv() {
+  const csv = buildCsv();
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'dosis_' + todayKey() + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+document.getElementById('exportBtn').addEventListener('click', downloadCsv);
+
+function buildCsv() {
+  const rows = [['Fecha', 'Hora', 'Tipo']];
+  entries.slice().sort((a, b) => a.ts - b.ts).forEach(e => {
+    const d = new Date(e.ts);
+    const fecha = todayKey(d);
+    const hora = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    rows.push([fecha, hora, TYPES[e.type].label]);
+  });
+  return '\uFEFF' + rows.map(r => r.join(',')).join('\n');
+}
+
+// --- Informe PDF por año ---
+const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function populateYearSelect() {
+  const sel = document.getElementById('pdfYearSelect');
+  const prevValue = sel.value;
+  const years = Array.from(new Set(entries.map(e => yearKey(new Date(e.ts))))).sort();
+  if (!years.length) years.push(String(new Date().getFullYear()));
+  sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  sel.value = years.includes(prevValue) ? prevValue : years[years.length - 1];
+}
+
+function computeYearData(year) {
+  const totals = { p: 0, i: 0, g: 0 };
+  const monthly = Array.from({ length: 12 }, () => ({ p: 0, i: 0, g: 0 }));
+  entries.forEach(e => {
+    const d = new Date(e.ts);
+    if (yearKey(d) !== year) return;
+    monthly[d.getMonth()][e.type]++;
+    totals[e.type]++;
+  });
+  return { totals, monthly, grand: totals.p + totals.i + totals.g };
+}
+
+function generatePdf(year) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const marginX = 16;
+  let y = 20;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('Resumen de dosis \u2014 ' + year, marginX, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(110);
+  const genLabel = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  doc.text('Generado el ' + genLabel, marginX, y);
+  doc.setTextColor(20);
+  y += 10;
+
+  const { totals, monthly } = computeYearData(year);
+  const boxes = [
+    ['Pastilla alergia', totals.p],
+    ['Inhalador nasal', totals.i],
+    ['Gotas de ojos', totals.g]
+  ];
+  const gap = 4;
+  const boxW = (pageW - marginX * 2 - gap * 2) / 3;
+  boxes.forEach((b, idx) => {
+    const bx = marginX + idx * (boxW + gap);
+    doc.setDrawColor(200);
+    doc.roundedRect(bx, y, boxW, 22, 2, 2);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text(String(b[1]), bx + boxW / 2, y + 10, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text(b[0], bx + boxW / 2, y + 16.5, { align: 'center', maxWidth: boxW - 3 });
+  });
+  y += 30;
+
+  const tableW = pageW - marginX * 2;
+  const colW = [tableW * 0.34, tableW * 0.22, tableW * 0.22, tableW * 0.22];
+  const headers = ['Mes', 'Pastilla', 'Inhalador', 'Gotas'];
+  const rowH = 6.6;
+  const tableTop = y;
+
+  doc.setFillColor(235, 235, 235);
+  doc.rect(marginX, y, tableW, rowH, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  let cx = marginX;
+  headers.forEach((h, i) => { doc.text(h, cx + 2, y + 4.6); cx += colW[i]; });
+  y += rowH;
+
+  doc.setFont('helvetica', 'normal');
+  monthly.forEach((m, idx) => {
+    const vals = [MONTH_NAMES[idx], String(m.p), String(m.i), String(m.g)];
+    cx = marginX;
+    vals.forEach((v, i) => { doc.text(v, cx + 2, y + 4.6); cx += colW[i]; });
+    y += rowH;
+    doc.setDrawColor(222);
+    doc.line(marginX, y, marginX + tableW, y);
+  });
+  doc.setDrawColor(180);
+  doc.rect(marginX, tableTop, tableW, y - tableTop);
+
+  return doc;
+}
+
+document.getElementById('pdfBtn').addEventListener('click', async () => {
+  const year = document.getElementById('pdfYearSelect').value;
+  const doc = generatePdf(year);
+  const filename = 'dosis_resumen_' + year + '.pdf';
+  if (downloadsApi) {
+    try {
+      await downloadsApi.save({ filename, data: doc.output('blob') });
+    } catch (err) {
+      if (err && err.code !== 'declined') console.error('Error al exportar PDF', err);
+    }
+  } else {
+    doc.save(filename);
+  }
+});
+
+populateYearSelect();
+
+document.getElementById('btnP').addEventListener('click', () => addDose('p'));
+document.getElementById('btnI').addEventListener('click', () => addDose('i'));
+document.getElementById('btnG').addEventListener('click', () => addDose('g'));
+document.getElementById('undoBtn').addEventListener('click', undoLast);
+
+dateInput.addEventListener('change', () => {
+  if (!dateInput.value) return;
+  const [y, m, d] = dateInput.value.split('-').map(Number);
+  selectedDate = new Date(y, m - 1, d);
+  renderAll();
+});
+document.getElementById('jumpToday').addEventListener('click', () => {
+  selectedDate = new Date();
+  dateInput.value = todayKey();
+  renderAll();
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+  });
+});
+
+renderAll();
+</script>
+</body>
+</html>
